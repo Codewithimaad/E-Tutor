@@ -8,80 +8,97 @@ export const UserContext = createContext();
 const UserContextProvider = ({ children }) => {
     const [token, setToken] = useState(localStorage.getItem('token') || null);
     const [user, setUser] = useState(null);
-    const navigate = useNavigate();
     const [studentCount, setStudentCount] = useState(0);
+    const [loading, setLoading] = useState(true);
+    const [notifications, setNotifications] = useState([]);
+    const navigate = useNavigate();
 
-
-    // Backend URL (make sure to replace with the actual one)
     const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
-    // Fetch user data using the token
     const fetchUserData = async () => {
+        setLoading(true);
         if (token) {
             try {
                 const response = await axios.get(`${backendUrl}api/users/getUser`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
 
-                console.log("Fetched user data:", response.data.user); // Log the user data to check the googleImage field
-
                 if (response.data.success) {
                     setUser(response.data.user);
+                } else {
+                    toast.error(response.data.message);
                 }
             } catch (err) {
                 console.error(err);
-                toast.error(response.data.message);
+                toast.error("Failed to fetch user data.");
             }
         }
+        setLoading(false);
     };
 
-
     const fetchTotalStudents = async () => {
-        if (!token) return; // ✅ Skip if not authenticated
-
+        if (!token) return;
         try {
             const response = await axios.get(`${backendUrl}api/users/total-students`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
+                headers: { Authorization: `Bearer ${token}` },
             });
             setStudentCount(response.data.total);
-            console.log('total students: ', response.data.total);
-
         } catch (error) {
             console.error("Error fetching student count:", error);
         }
     };
 
 
-    // Check for token and user data when the app is loaded
+    const fetchNotifications = async () => {
+        if (!token || !user || user.role !== 'teacher') return;
+        try {
+            const res = await axios.get(`${backendUrl}api/notification/teacher-notification`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            setNotifications(res.data.notifications || []);
+        } catch (err) {
+            console.error('Error fetching notifications:', err);
+        }
+    };
+
     useEffect(() => {
         if (token) {
             fetchUserData();
             fetchTotalStudents();
+        } else {
+            setLoading(false);
         }
     }, [token]);
 
-
-    // Handle logout by clearing the token from localStorage and state
     const logout = () => {
         localStorage.removeItem('token');
         setToken(null);
         setUser(null);
-        toast.success('Logout Successfully!')
+        toast.success('Logged out successfully!');
         navigate('/signin-page');
     };
 
-    const value = {
-        token,
-        user,
-        setToken,
-        setUser,
-        logout,
-        studentCount,
-    };
-
-    return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
+    return (
+        <UserContext.Provider
+            value={{
+                token,
+                user,
+                userId: user?._id, // ✅ added here
+                setToken,
+                setUser,
+                logout,
+                studentCount,
+                loading,
+                backendUrl,
+                isGoogleUser: user?.isGoogleUser || false,
+                notifications,
+                setNotifications,
+                fetchNotifications,
+            }}
+        >
+            {children}
+        </UserContext.Provider>
+    );
 };
 
 export default UserContextProvider;

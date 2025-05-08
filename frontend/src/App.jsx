@@ -13,6 +13,10 @@ import UserContextProvider from './context/userContextApi';
 import { ToastContainer } from 'react-toastify';
 import { GoogleOAuthProvider } from '@react-oauth/google'; // ✅ Import Google provider
 import 'react-toastify/dist/ReactToastify.css';
+import RoleSelectionPage from './pages/RoleSelectionPage';
+import TeacherDashboard from './pages/TeacherDashboard';
+import ProtectedRoutes from './components/ProtectedRoutes';
+import TeacherProfile from './pages/TeacherProfile';
 
 function App() {
   return (
@@ -28,7 +32,11 @@ function App() {
               <Route path="/become-tutor-form" element={<BecomeTutorForm />} />
               <Route path="/signup-page" element={<SignupPage />} />
               <Route path="/signin-page" element={<SignInPage />} />
+              <Route path="/dashboard" element={<ProtectedRoutes />} /> {/* ✅ Smart redirect based on role */}
               <Route path="/dashboard-page" element={<Dashboard />} />
+              <Route path="/teacher-dashboard" element={<TeacherDashboard />} />
+              <Route path="/select-role" element={<RoleSelectionPage />} />
+              <Route path="/teachers/:id" element={<TeacherProfile />} />
             </Routes>
             <Footer />
           </div>

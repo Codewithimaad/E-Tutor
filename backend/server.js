@@ -2,7 +2,9 @@ import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors'
 import connectDB from './config/connectDb.js';
-import studentUserRoutes from './routes/studentUserRoutes.js'
+import userRoutes from './routes/userRoutes.js'
+import enrollRoutes from './routes/enrollRoutes.js'
+import notificationRoutes from './routes/notificationRoute.js'
 
 // Initialize dotenv for environment variables
 dotenv.config();
@@ -25,7 +27,10 @@ app.use(express.json());
 app.use(cors(corsOptions));
 
 // Routes
-app.use('/api/users', studentUserRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/enrollments', enrollRoutes);
+app.use('/api/notification', notificationRoutes);
+
 
 // Sample route to test API is working
 app.get('/', (req, res) => {

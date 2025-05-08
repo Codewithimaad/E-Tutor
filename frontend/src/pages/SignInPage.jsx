@@ -1,46 +1,73 @@
-import React, { useState } from "react";
-import { GoogleLogin } from '@react-oauth/google'; // ✅ Import GoogleLogin
+import React, { useState, useContext } from "react";
+import { GoogleLogin } from '@react-oauth/google';
 import { useNavigate } from 'react-router-dom';
 import axios from "axios";
 import illustration from '../assets/signin-page/Illustrations.png';
 import { toast } from 'react-toastify';
+import { UserContext } from "../context/userContextApi"; // ✅ Import context
 
 const SignInPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-
   const navigate = useNavigate();
 
-  // Handle normal login
+  const { setToken, setUser } = useContext(UserContext); // ✅ Use context
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     try {
       const response = await axios.post('http://localhost:5000/api/users/login', { email, password });
-      localStorage.setItem('token', response.data.token);
-      toast.success(response.data.message);
-      navigate('/dashboard-page');
+
+      const { token, user, message } = response.data;
+
+      localStorage.setItem('token', token);
+      setToken(token);        // ✅ Set token in context
+      setUser(user);          // ✅ Set user in context
+
+      toast.success(message);
+
+      if (user?.role && user.role === 'student') {
+        navigate('/dashboard-page');
+      }
+      else if (user?.role && user.role === 'teacher') {
+        navigate('/teacher-dashboard');
+      }
+      else {
+        navigate('/select-role');
+      }
+
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.message || 'Login failed');
     }
   };
 
-  // Handle Google login success
   const handleGoogleSuccess = async (response) => {
     try {
-      // Send the Google token to your backend
       const res = await axios.post('http://localhost:5000/api/users/google-login', {
         credential: response.credential,
       });
 
-      if (res.data.success) {
-        toast.success(res.data.message);
-        localStorage.setItem('token', res.data.token);
-        navigate('/dashboard-page');
+      const { token, user, success, message } = res.data;
+
+      if (success) {
+        toast.success(message);
+        localStorage.setItem('token', token);
+        setToken(token);      // ✅ Set token in context
+        setUser(user);        // ✅ Set user in context
+
+        if (user?.role && user.role === 'student') {
+          navigate('/dashboard-page');
+        }
+        else if (user?.role && user.role === 'teacher') {
+          navigate('/teacher-dashboard');
+        }
+        else {
+          navigate('/select-role');
+        }
       } else {
-        toast.error(res.data.message);
+        toast.error(message);
       }
     } catch (error) {
       console.error("Google Login Error:", error);
@@ -48,7 +75,6 @@ const SignInPage = () => {
     }
   };
 
-  // Handle Google login failure
   const handleGoogleFailure = (error) => {
     console.error("Google Login Error:", error);
     toast.error('Google login failed. Please try again.');
@@ -56,12 +82,10 @@ const SignInPage = () => {
 
   return (
     <div className="flex h-screen">
-      {/* Left Section - Illustration */}
       <div className="flex-1 flex justify-center items-center bg-blue-100">
         <img src={illustration} alt="Illustration" className="max-w-md" />
       </div>
 
-      {/* Right Section - Sign In Form */}
       <div className="flex-1 flex justify-center items-center">
         <div className="w-96 p-8 shadow-lg rounded-lg border">
           <h2 className="text-2xl font-semibold text-center mb-6">Sign in to your account</h2>
@@ -106,13 +130,12 @@ const SignInPage = () => {
 
           <div className="text-center my-4 text-gray-500">OR</div>
 
-          {/* Google Login Button */}
           <div className="flex justify-center space-x-4">
             <GoogleLogin
               onSuccess={handleGoogleSuccess}
               onError={handleGoogleFailure}
-              useOneTap // Optional: Allows Google to display a "One Tap" login button
-              theme="outline" // Optional: You can style the button further
+              useOneTap
+              theme="outline"
             />
           </div>
         </div>

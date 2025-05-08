@@ -1,22 +1,18 @@
 import React, { useContext } from 'react';
-import { Link } from 'react-router-dom'; // Import Link
-import logo from '../assets/Home-page-images/logoImage.png'; // Import logo
+import { Link, useNavigate } from 'react-router-dom';
+import logo from '../assets/Home-page-images/logoImage.png';
 import { IoSearchOutline } from "react-icons/io5";
-import { useNavigate } from 'react-router-dom';
 import { UserContext } from '../context/userContextApi';
 
 const Navbar = () => {
   const navigate = useNavigate();
-  const { token, logout } = useContext(UserContext);
-
-
-
+  const { token, logout, user } = useContext(UserContext);
 
   return (
     <nav className="bg-gray-100 p-4 flex justify-between items-center sticky top-12 z-50">
       <div className="flex items-center">
         <Link to="/" className="text-xl font-bold flex items-center">
-          <img src={logo} alt="E-tutor Logo" className="h-8 mr-2" /> {/* Logo */}
+          <img src={logo} alt="E-tutor Logo" className="h-8 mr-2" />
           E-tutor
         </Link>
         <div className="relative ml-20 w-[300px]">
@@ -30,13 +26,25 @@ const Navbar = () => {
       </div>
 
       <div className="flex items-center space-x-3">
-        {/* Conditionally render Logout button */}
         {token ? (
-          <div className='flex'>
-            <Link to='/dashboard-page'
-              className="text-[#FF6636] bg-[#FFEEE8] p-4 rounded-md h-11 flex items-center font-semibold">
-              Dashboard
-            </Link>
+          <div className='flex space-x-3'>
+            {/* Conditional Dashboard Link */}
+            {user?.role === 'student' && (
+              <Link
+                to="/dashboard-page"
+                className="text-[#FF6636] bg-[#FFEEE8] p-4 rounded-md h-11 flex items-center font-semibold"
+              >
+                Dashboard
+              </Link>
+            )}
+            {user?.role === 'teacher' && (
+              <Link
+                to="/teacher-dashboard"
+                className="text-[#FF6636] bg-[#FFEEE8] p-4 rounded-md h-11 flex items-center font-semibold"
+              >
+                Dashboard
+              </Link>
+            )}
             <button
               onClick={logout}
               className="text-[#FF6636] bg-[#FFEEE8] p-4 rounded-md h-11 flex items-center font-semibold"
@@ -44,7 +52,6 @@ const Navbar = () => {
               Logout
             </button>
           </div>
-
         ) : (
           <>
             <button

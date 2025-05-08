@@ -1,5 +1,5 @@
 import bcrypt from 'bcrypt';
-import User from '../models/studentUserModel.js';
+import User from '../models/userModel.js';
 
 // 🔁 Update Profile
 const updateProfile = async (req, res) => {
