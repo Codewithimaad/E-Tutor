@@ -3,25 +3,26 @@ import { Link, useParams } from "react-router-dom";
 import axios from "axios";
 import { UserContext } from "../context/userContextApi";
 import defaultAvatar from "../assets/Teachers-images/t-1.png";
-import { toast } from 'react-toastify';
+import { toast } from "react-toastify";
 
 const TeacherProfile = () => {
     const { id } = useParams();
-    const { backendUrl, userId } = useContext(UserContext); // Assuming `userId` is stored in context
+    const { backendUrl, userId } = useContext(UserContext);
     const [teacher, setTeacher] = useState(null);
     const [loading, setLoading] = useState(true);
     const [reviews, setReviews] = useState([]);
     const [review, setReview] = useState({ rating: 5, content: "" });
 
-    // Fetch teacher profile data
+    const [zoomLink, setZoomLink] = useState(null);
+    const [zoomError, setZoomError] = useState("");
+
+    // Fetch teacher profile
     useEffect(() => {
         const fetchTeacher = async () => {
             try {
                 const token = localStorage.getItem("token");
                 const res = await axios.get(`${backendUrl}api/users/get-teacher/${id}`, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
+                    headers: { Authorization: `Bearer ${token}` },
                 });
                 setTeacher(res.data);
                 setReviews(res.data.reviews || []);
@@ -35,7 +36,30 @@ const TeacherProfile = () => {
         fetchTeacher();
     }, [backendUrl, id]);
 
-    // Handle form input for review submission
+    // Fetch Zoom link if student is enrolled
+    useEffect(() => {
+        const fetchZoomLink = async () => {
+            if (!teacher?._id || !userId) return;
+            try {
+                const token = localStorage.getItem("token");
+                const res = await axios.get(
+                    `${backendUrl}api/users/${teacher._id}/zoom-link-for-student/${userId}`,
+                    {
+                        headers: { Authorization: `Bearer ${token}` },
+                    }
+                );
+
+                console.log(res.data);
+
+                setZoomLink(res.data.zoomLink);
+            } catch (error) {
+                setZoomError("Zoom link is unavailable or you are not enrolled.");
+            }
+        };
+
+        fetchZoomLink();
+    }, [teacher, userId]);
+
     const handleReviewChange = (e) => {
         const { name, value } = e.target;
         setReview((prev) => ({
@@ -52,25 +76,19 @@ const TeacherProfile = () => {
                 `${backendUrl}api/reviews/create`,
                 { teacherId: id, ...review },
                 {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
+                    headers: { Authorization: `Bearer ${token}` },
                 }
             );
-            // Add the new review to the state
             setReviews([res.data, ...reviews]);
-            setReview({ rating: 5, content: "" }); // Reset the review form
+            setReview({ rating: 5, content: "" });
         } catch (error) {
             console.error("Failed to submit review:", error);
         }
     };
 
-    // Enroll student logic
     const enrollStudent = async () => {
         try {
             const token = localStorage.getItem("token");
-            console.log("Token:", token); // Check if the token exists
-
             const response = await axios.post(
                 `${backendUrl}api/enrollments/enroll`,
                 { studentId: userId, teacherId: teacher._id },
@@ -81,24 +99,20 @@ const TeacherProfile = () => {
                 }
             );
 
-            console.log("Enrollment Response:", response); // Check the response from the backend
-
             if (response.data.message) {
-                toast.success(response.data.message); // Alert with the response message
+                toast.success(response.data.message);
             } else {
-                toast.error("No message in response:", response.data);
+                toast.error("No message in response.");
             }
         } catch (error) {
-            console.error("Error enrolling student:", error); // Log any errors that occur
-            alert("Something went wrong. Please try again.");
+            console.error("Error enrolling student:", error);
+            toast.error("Something went wrong. Please try again.");
         }
     };
-
 
     if (loading) return <p className="text-center mt-10 text-lg font-medium">Loading...</p>;
     if (!teacher) return <p className="text-center mt-10 text-red-600 text-lg">Teacher not found.</p>;
 
-    // Dummy courses if teacher has none
     const fallbackCourses = [
         { _id: "1", title: "Intro to JavaScript", description: "Learn JavaScript basics including variables, loops, and DOM." },
         { _id: "2", title: "React Fundamentals", description: "Understand components, hooks, and building interactive UIs." },
@@ -134,7 +148,7 @@ const TeacherProfile = () => {
                     </div>
                 </div>
 
-                {/* Courses Section */}
+                {/* Courses */}
                 <div className="mt-10">
                     <h2 className="text-2xl font-semibold text-gray-800 mb-6 border-b pb-2">
                         Courses by {teacher.firstName}
@@ -154,7 +168,7 @@ const TeacherProfile = () => {
                     </div>
                 </div>
 
-                {/* CTA Buttons */}
+                {/* CTA */}
                 <div className="mt-12 flex flex-col sm:flex-row justify-center gap-6">
                     <button className="bg-orange-500 hover:bg-orange-600 transition text-white text-lg px-8 py-3 rounded-xl shadow-md">
                         Message {teacher.firstName}
@@ -165,10 +179,26 @@ const TeacherProfile = () => {
                     >
                         Enroll with {teacher.firstName}
                     </Link>
-
                 </div>
 
-                {/* Reviews Section */}
+                {/* Zoom Section */}
+                <div className="mt-10 bg-white border-t pt-8">
+                    <h2 className="text-xl font-semibold text-gray-800 mb-2">Zoom Call</h2>
+                    {zoomLink ? (
+                        <a
+                            href={zoomLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 underline"
+                        >
+                            Join Zoom Meeting
+                        </a>
+                    ) : (
+                        <p className="text-red-500">{zoomError}</p>
+                    )}
+                </div>
+
+                {/* Reviews */}
                 <div className="mt-12">
                     <h2 className="text-2xl font-semibold text-gray-800 mb-6 border-b pb-2">
                         Reviews for {teacher.firstName}

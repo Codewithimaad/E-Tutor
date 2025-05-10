@@ -2,6 +2,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import User from '../models/userModel.js';
 import { OAuth2Client } from 'google-auth-library';
+import Enrollment from '../models/enrollModel.js'
 
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -267,11 +268,21 @@ const getTeachers = async (req, res) => {
     }
 };
 
+// GET /api/users?role=student
+const getStudents = async (req, res) => {
+    try {
+        const students = await User.find({ role: "student" }).select("-password"); // exclude password
+        res.status(200).json(students);
+    } catch (error) {
+        console.error("Error fetching students:", error);
+        res.status(500).json({ message: "Server error. Could not fetch students." });
+    }
+};
+
 
 const getTeacherDetails = async (req, res) => {
     try {
         const teacher = await User.findById(req.params.id).select("-password");
-        console.log(teacher);
 
         if (!teacher || teacher.role !== "teacher") {
             return res.status(404).json({ message: "Teacher not found" });
@@ -342,6 +353,64 @@ const updateTeacherProfile = async (req, res) => {
 };
 
 
+// POST /api/users/:id/zoom-link
+const setZoomLink = async (req, res) => {
+    const { id } = req.params;
+    const { zoomLink } = req.body;
+
+    if (!zoomLink || !zoomLink.startsWith("https://zoom.")) {
+        return res.status(400).json({ message: "Invalid Zoom link" });
+    }
+
+    try {
+        const user = await User.findById(id);
+        if (!user || user.role !== "teacher") {
+            return res.status(404).json({ message: "Teacher not found" });
+        }
+
+        user.zoomLink = zoomLink;
+        await user.save();
+
+        res.status(201).json({ message: "Zoom link set successfully", zoomLink: user.zoomLink });
+    } catch (err) {
+        console.error("Error setting Zoom link:", err);
+        res.status(500).json({ message: "Server error" });
+    }
+};
 
 
-export { signup, loginUser, getUserData, googleLogin, totalStudents, setUserRole, getTeachers, getTeacherDetails, updateTeacherProfile };
+
+// GET /api/users/:teacherId/zoom-link-for-student/:studentId
+const getZoomLinkIfEnrolled = async (req, res) => {
+    const { teacherId, studentId } = req.params;
+
+    try {
+        const enrollment = await Enrollment.findOne({
+            teacher: teacherId,
+            student: studentId,
+            status: "approved",
+        });
+
+        if (!enrollment) {
+            console.log(`Enrollment not found for student ${studentId} with teacher ${teacherId}`);
+            return res.status(403).json({ message: "You are not enrolled with this teacher." });
+        }
+
+        const teacher = await User.findById(teacherId);
+        if (!teacher || !teacher.zoomLink) {
+            console.log(`Zoom link not found for teacher ${teacherId}`);
+            return res.status(404).json({ message: "Zoom link not found." });
+        }
+
+        res.status(200).json({ zoomLink: teacher.zoomLink });
+    } catch (err) {
+        console.error("Error getting Zoom link:", err);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+
+
+
+
+
+export { signup, loginUser, setZoomLink, getZoomLinkIfEnrolled, getUserData, googleLogin, totalStudents, setUserRole, getTeachers, getStudents, getTeacherDetails, updateTeacherProfile };

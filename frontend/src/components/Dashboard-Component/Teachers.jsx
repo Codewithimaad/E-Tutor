@@ -2,13 +2,14 @@ import React, { useContext, useEffect, useState } from "react";
 import axios from "axios";
 import defaultAvatar from "../../assets/Teachers-images/t-1.png"; // fallback avatar
 import { UserContext } from "../../context/userContextApi";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const Teachers = () => {
   const [teachers, setTeachers] = useState([]);
   const [search, setSearch] = useState("");
   const [filtered, setFiltered] = useState([]);
   const { backendUrl, token } = useContext(UserContext);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchTeachers = async () => {
@@ -18,13 +19,11 @@ const Teachers = () => {
             Authorization: `Bearer ${token}`,
           },
         });
-        console.log("API Response:", res.data);
 
         if (Array.isArray(res.data)) {
           setTeachers(res.data);
           setFiltered(res.data);
         } else {
-          console.warn("Unexpected response format:", res.data);
           setTeachers([]);
           setFiltered([]);
         }
@@ -36,7 +35,7 @@ const Teachers = () => {
     };
 
     fetchTeachers();
-  }, []);
+  }, [backendUrl, token]);
 
   useEffect(() => {
     const filteredList = teachers.filter((teacher) =>
@@ -46,6 +45,12 @@ const Teachers = () => {
     );
     setFiltered(filteredList);
   }, [search, teachers]);
+
+  // Navigate to message page when Send Message is clicked
+  const handleSendMessage = (teacherId) => {
+    navigate(`/student-message/${teacherId}`);
+  };
+
 
   return (
     <div className="bg-white shadow-md rounded-xl p-6 mt-6">
@@ -74,9 +79,13 @@ const Teachers = () => {
             <p className="text-gray-500 text-sm">Role: {teacher.role}</p>
             <p className="text-yellow-500 font-bold">⭐ {teacher.rating || "4.5"}</p>
             <div className="flex gap-2 justify-center">
-              <button className="mt-2 bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600">
+              <button
+                onClick={() => handleSendMessage(teacher._id)}
+                className="mt-2 bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600"
+              >
                 Send Message
               </button>
+
               <Link
                 to={`/teachers/${teacher._id}`}
                 className="mt-2 bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600"

@@ -13,6 +13,14 @@ const userSchema = new mongoose.Schema(
         subject: { type: String, default: "" },  // New field for the subject the teacher teaches
         experience: { type: String, default: "" },  // New field for years of experience
         phone: { type: String, default: "" },  // New field for phone number
+        online: {
+            type: Boolean,
+            default: false
+        },
+        lastSeen: {
+            type: Date,
+            default: null
+        },
         role: {
             type: String,
             enum: ['student', 'teacher'],
@@ -29,7 +37,10 @@ const userSchema = new mongoose.Schema(
                 type: mongoose.Schema.Types.ObjectId,
                 ref: 'Notification',
             }
-        ]
+        ],
+        zoomLink: { type: String, default: "" }, // ✅ New Zoom field
+
+
     },
     { timestamps: true }
 );

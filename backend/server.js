@@ -1,52 +1,50 @@
+// server.js
 import express from 'express';
 import dotenv from 'dotenv';
-import cors from 'cors'
+import cors from 'cors';
+import http from 'http';
 import connectDB from './config/connectDb.js';
-import userRoutes from './routes/userRoutes.js'
-import enrollRoutes from './routes/enrollRoutes.js'
-import notificationRoutes from './routes/notificationRoute.js'
+import userRoutes from './routes/userRoutes.js';
+import enrollRoutes from './routes/enrollRoutes.js';
+import notificationRoutes from './routes/notificationRoute.js';
+import messageRoutes from './routes/messageRoutes.js';
+import { setupSocket } from './utils/socket.js'; // 👈 Import socket setup
 
-// Initialize dotenv for environment variables
 dotenv.config();
 
-// App Config
 const app = express();
+const server = http.createServer(app);
 
-// Db Connect
 connectDB();
 
-// CORS Middleware Configuration
 const corsOptions = {
-    origin: "*", // Allow all
-    methods: ["GET", "POST", "PUT", "DELETE"], // Allowed methods
-    credentials: true, // Allow cookies if needed
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
 };
 
-// Middleware for JSON parsing
-app.use(express.json());
 app.use(cors(corsOptions));
+app.use(express.json());
 
-// Routes
 app.use('/api/users', userRoutes);
 app.use('/api/enrollments', enrollRoutes);
 app.use('/api/notification', notificationRoutes);
+app.use('/api/messages', messageRoutes);
 
-
-// Sample route to test API is working
 app.get('/', (req, res) => {
     res.send('API is running...');
 });
 
-// Error handling middleware
+// 🔌 Initialize Socket.IO
+setupSocket(server);
+
 app.use((req, res, next) => {
     const error = new Error('Not Found');
     error.status = 404;
     next(error);
 });
 
-
-// Server startup
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
+server.listen(PORT, () => {
+    console.log(`🚀 Server running with Socket.IO on http://localhost:${PORT}`);
 });

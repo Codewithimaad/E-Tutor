@@ -1,7 +1,8 @@
 import express from 'express';
 const router = express.Router();
 
-import { signup, loginUser, getUserData, googleLogin, totalStudents, setUserRole, getTeachers, getTeacherDetails, updateTeacherProfile } from '../controllers/userController.js';
+
+import { signup, loginUser, getUserData, googleLogin, totalStudents, setUserRole, getTeachers, getTeacherDetails, updateTeacherProfile, getStudents, setZoomLink, getZoomLinkIfEnrolled, } from '../controllers/userController.js';
 import { updateProfile, changePassword } from '../controllers/profleController.js'; // You may separate these for clarity
 import { authUser } from '../middlewares/verifyToken.js';
 
@@ -26,11 +27,19 @@ router.post('/set-role', authUser, setUserRole); // <-- Add this
 // GET all teachers
 router.get("/get-teachers", authUser, getTeachers); // Handles /api/users?role=teacher
 
+// GET all students
+router.get("/get-students", authUser, getStudents); // Handles /api/users?role=student
+
 // GET teacher details
 router.get("/get-teacher/:id", authUser, getTeacherDetails);
 
 // Update Teacher Profile
 router.put('/update-teacher-profile', authUser, updateTeacherProfile); // ✅ Updated
+
+router.post("/:id/zoom-link", authUser, setZoomLink);
+
+
+router.get("/:teacherId/zoom-link-for-student/:studentId", authUser, getZoomLinkIfEnrolled);
 
 
 

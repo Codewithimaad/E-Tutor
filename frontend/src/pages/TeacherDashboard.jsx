@@ -5,12 +5,12 @@ import { UserContext } from "../context/userContextApi";
 
 import MyStudents from "../components/Teacher Dashboard/MyStudents";
 import CreateCourse from "../components/Teacher Dashboard/CreateCourse";
-import Message from "../components/Teacher Dashboard/Message";
 import Overview from "../components/Teacher Dashboard/Overview";
 import Settings from "../components/Teacher Dashboard/Settings";
 import Profile from "../components/Teacher Dashboard/Profile";
-import Notification from "../components/Teacher Dashboard/Notification"; // ✅ Rename for clarity
+import Notification from "../components/Teacher Dashboard/Notification";
 import EnrollmentRequests from "../components/Teacher Dashboard/EnrollmentRequest";
+import TeacherZoomLinkForm from "../components/Teacher Dashboard/TeacherZoomLinkForm";
 
 const TeacherDashboard = () => {
     const [activeComponent, setActiveComponent] = useState("Overview");
@@ -36,6 +36,14 @@ const TeacherDashboard = () => {
         return () => clearTimeout(timeout);
     }, [loading, token, user, navigate]);
 
+    const handleTabClick = (tab) => {
+        if (tab === "Message") {
+            navigate("/message"); // Navigate to /message route
+        } else {
+            setActiveComponent(tab);
+        }
+    };
+
     if (loading) {
         return <div className="text-center py-10 text-gray-500">Loading dashboard...</div>;
     }
@@ -50,10 +58,10 @@ const TeacherDashboard = () => {
                 return <MyStudents />;
             case "CreateCourse":
                 return <CreateCourse />;
-            case "Message":
-                return <Message />;
             case "Settings":
                 return <Settings />;
+            case "TeacherZoomLinkForm":
+                return <TeacherZoomLinkForm />;
             case "Profile":
                 return <Profile teacherId={user._id} />;
             case "EnrollmentRequests":
@@ -79,16 +87,15 @@ const TeacherDashboard = () => {
                         </p>
                     </div>
 
-                    {/* ✅ Notifications bell icon */}
                     <Notification />
                 </div>
             </div>
 
             <div className="bg-white shadow-md rounded-xl mt-4 p-4 flex gap-6 flex-wrap">
-                {["Overview", "MyStudents", "CreateCourse", "Message", "Settings", "Profile", "EnrollmentRequests"].map(tab => (
+                {["Overview", "MyStudents", "CreateCourse", "Message", "Settings", "Profile", "TeacherZoomLinkForm", "EnrollmentRequests"].map(tab => (
                     <button
                         key={tab}
-                        onClick={() => setActiveComponent(tab)}
+                        onClick={() => handleTabClick(tab)}
                         className={`pb-1 font-semibold ${activeComponent === tab ? "border-b-2 border-black" : "text-gray-500"}`}
                     >
                         {tab.replace(/([A-Z])/g, " $1").trim()}
